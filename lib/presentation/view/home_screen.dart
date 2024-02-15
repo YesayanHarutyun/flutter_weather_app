@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_weather_app/data/datasource/sharedpereferences/shared_preferences_manager_impl.dart';
+import 'package:flutter_weather_app/domain/sharedpreferences/shared_preferences_manager.dart';
 import 'package:flutter_weather_app/presentation/apptheme/app_theme_provider.dart';
 import 'package:provider/provider.dart' as as_provider;
 import 'package:flutter_typeahead/flutter_typeahead.dart';
@@ -14,6 +16,7 @@ class HomeScreen extends ConsumerWidget {
   HomeScreen({super.key});
 
   final _homeViewModelProvider = homeViewModelStateNotifierProvider;
+  final SharedPreferencesManager preferencesManager = SharedPreferencesManagerImpl();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
@@ -35,10 +38,10 @@ class HomeScreen extends ConsumerWidget {
       );
 
   Widget _buildSuccessWidget(
-      WeatherModelWrapper weatherModelWrapper,
-      WidgetRef ref,
-      BuildContext context,
-      ) {
+    WeatherModelWrapper weatherModelWrapper,
+    WidgetRef ref,
+    BuildContext context,
+  ) {
     final appThemeProvider = as_provider.Provider.of<AppThemeProvider>(context);
     return RefreshIndicator(
       onRefresh: () async => ref
@@ -53,8 +56,8 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               children: [
                 _buildSearch(ref),
-                _buildCityInfo(
-                    weatherModelWrapper, appThemeProvider.darkTheme, ref, context),
+                _buildCityInfo(weatherModelWrapper, appThemeProvider.darkTheme,
+                    ref, context),
               ],
             ),
           ),
@@ -212,10 +215,11 @@ class HomeScreen extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: dp_20), // Spacer between text and button
+          const SizedBox(height: dp_20),
           ElevatedButton(
-            onPressed: () {
-              viewModel.fetchWeatherByCity(true, "");
+            onPressed: () async {
+              final currentCityName = await preferencesManager.getCurrentCity();
+              viewModel.fetchWeatherByCity(true, currentCityName ?? "");
             },
             child: const Text(Strings.refresh),
           ),
