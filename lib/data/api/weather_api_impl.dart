@@ -7,6 +7,7 @@ import 'package:flutter_weather_app/data/models/response/forecast_model_response
 import 'package:flutter_weather_app/data/models/response/suggested_city_model_response.dart';
 import 'package:flutter_weather_app/data/models/response/weather_model_response.dart';
 import 'package:flutter_weather_app/data/services/services.dart';
+import 'package:flutter_weather_app/domain/sharedpreferences/shared_preferences_manager.dart';
 import 'package:flutter_weather_app/utils/date_time_utils.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -16,12 +17,13 @@ const String baseURL = 'https://api.weatherapi.com/v1/';
 const int responseCode200 = 200;
 
 class WeatherApiImpl implements WeatherApi {
+  final Dio dio;
 
-  Dio dio;
+  final SharedPreferencesManager cityNamePreference;
 
-  LocationService locationService;
+  final LocationService locationService;
 
-  WeatherApiImpl(this.dio, this.locationService);
+  WeatherApiImpl(this.dio, this.locationService, this.cityNamePreference);
 
   @override
   Future<Weather> fetchWeatherByCity(bool isCurrent, String? cityName) async {
@@ -34,9 +36,11 @@ class WeatherApiImpl implements WeatherApi {
 
         Placemark place = placeMarks[0];
         cityName = place.locality;
+        await cityNamePreference.setCurrentCity(cityName ?? "");
       }
+      final cityNameFromSharedPrefs = await cityNamePreference.getCurrentCity() ?? "";
       final response = await dio.get(
-        '${baseURL}current.json?q=$cityName&key=${dotenv.env['API_KEY']}',
+        '${baseURL}current.json?q=$cityNameFromSharedPrefs&key=${dotenv.env['API_KEY']}',
       );
       if (response.statusCode == responseCode200) {
         return Weather.fromMap(response.data);
@@ -90,7 +94,7 @@ class WeatherApiImpl implements WeatherApi {
         for (Map<String, dynamic> forecastDay in data) {
           forecastByDays.add(ForecastModelByDaysResponse.fromMap(forecastDay));
           for (Map<String, dynamic> forecastHour in forecastDay["hour"]) {
-            if (forecastByHours.length == 24) break;
+            if (forecastByHours.length > 24) break;
             int timeMillis =
                 DateTime.parse(forecastHour["time"]).millisecondsSinceEpoch;
             if (timeMillis >=

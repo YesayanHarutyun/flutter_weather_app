@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_weather_app/data/datasource/sharedpereferences/shared_preferences_manager_impl.dart';
 import 'package:flutter_weather_app/domain/base/base_usecase.dart';
 import 'package:flutter_weather_app/domain/domain_module.dart';
 import 'package:flutter_weather_app/domain/models/city_model.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_weather_app/domain/models/suggested_cities_model.dart';
 import 'package:flutter_weather_app/domain/models/weather_model.dart';
 import 'package:flutter_weather_app/domain/models/weather_model_wrapper.dart';
 import 'package:flutter_weather_app/domain/models/weather_request_model.dart';
+import 'package:flutter_weather_app/domain/sharedpreferences/shared_preferences_manager.dart';
 import 'package:flutter_weather_app/presentation/state/state.dart';
 import 'package:flutter_weather_app/presentation/viewmodel/favourite_cities_viewmodel.dart';
 
@@ -28,6 +30,8 @@ class HomeViewModel extends StateNotifier<State<WeatherModelWrapper>> {
   final BaseUseCase<String, List<SuggestedCitiesModel>>
       _fetchAutoCompleteSearchCityUseCase;
 
+  SharedPreferencesManager cityNamePreference = SharedPreferencesManagerImpl();
+
   HomeViewModel(
     this._addFavouriteCityUseCase,
     this._deleteFavouriteCityUseCase,
@@ -35,16 +39,22 @@ class HomeViewModel extends StateNotifier<State<WeatherModelWrapper>> {
     this._fetchAutoCompleteSearchCityUseCase,
     this._fetchWeatherUseCase,
   ) : super(const State.init()) {
-    fetchWeatherByCity(true, "");
+    checkAndUpdateWeatherBasedOnLocationPreference();
   }
 
-  Future<void> fetchWeatherByCity(bool isCurrent, String city) async {
+  Future<void> checkAndUpdateWeatherBasedOnLocationPreference() async {
+    final currentCityName = await cityNamePreference.getCurrentCity();
+    currentCityName == null ? fetchWeatherByCity(true, "") : fetchWeatherByCity(false, currentCityName);
+  }
+
+  Future<void> fetchWeatherByCity(bool isCurrent, String cityName) async {
     try {
+      cityNamePreference.setCurrentCity(cityName);
       state = const State.loading();
       final result = await _fetchWeatherUseCase.execute(
         input: WeatherRequestModel(
           isCurrent: isCurrent,
-          cityName: city,
+          cityName: cityName,
         ),
       );
       state = State.success(

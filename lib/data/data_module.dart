@@ -27,6 +27,7 @@ final weathersApiProvider = Provider<WeatherApi>(
   (ref) => WeatherApiImpl(
     ref.watch(dioProvider),
     ref.watch(locationService),
+    ref.watch(sharedPreferencesManagerProvider)
   ),
 );
 
