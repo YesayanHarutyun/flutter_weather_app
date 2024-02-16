@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_weather_app/data/api/weather_api.dart';
-import 'package:flutter_weather_app/data/datasource/sharedpereferences/shared_preferences_manager_impl.dart';
 import 'package:flutter_weather_app/data/exceptions/custom_exception_handler.dart';
 import 'package:flutter_weather_app/data/models/response/forecast_model_by_days_response.dart';
 import 'package:flutter_weather_app/data/models/response/forecast_model_response_wrapper.dart';
@@ -18,13 +17,13 @@ const String baseURL = 'https://api.weatherapi.com/v1/';
 const int responseCode200 = 200;
 
 class WeatherApiImpl implements WeatherApi {
-  Dio dio;
+  final Dio dio;
 
-  SharedPreferencesManager cityNamePreference = SharedPreferencesManagerImpl();
+  final SharedPreferencesManager cityNamePreference;
 
-  LocationService locationService;
+  final LocationService locationService;
 
-  WeatherApiImpl(this.dio, this.locationService);
+  WeatherApiImpl(this.dio, this.locationService, this.cityNamePreference);
 
   @override
   Future<Weather> fetchWeatherByCity(bool isCurrent, String? cityName) async {
